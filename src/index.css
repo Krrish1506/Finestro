@@ -1,4 +1,56 @@
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
+
+/* Global Premium Styling */
+@layer base {
+  html {
+    @apply scroll-smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-[#F8FAFC] text-slate-900 font-sans;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Premium typography scale */
+  h1 {
+    @apply text-5xl font-bold tracking-tight text-slate-950;
+  }
+
+  h2 {
+    @apply text-4xl font-bold tracking-tight text-slate-950;
+  }
+
+  h3 {
+    @apply text-3xl font-bold tracking-tight text-slate-950;
+  }
+
+  h4 {
+    @apply text-2xl font-semibold tracking-tight text-slate-900;
+  }
+
+  h5 {
+    @apply text-xl font-semibold tracking-tight text-slate-900;
+  }
+
+  h6 {
+    @apply text-lg font-semibold tracking-tight text-slate-900;
+  }
+
+  p {
+    @apply text-base leading-[1.6] text-slate-700;
+  }
+
+  /* Smooth selection */
+  ::selection {
+    @apply bg-blue-400 text-white;
+  }
+}
+
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
     *, :before, :after, ::backdrop {

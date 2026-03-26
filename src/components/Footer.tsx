@@ -14,13 +14,16 @@ interface FooterProps {
 
 export function Footer({ onNavigate }: FooterProps) {
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer 
+      className="bg-hero-blue-1 text-slate-300 border-t border-blue-900/20 py-12"
+      style={{ backgroundColor: '#0052CC' }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="h-8 w-8 text-blue-500" />
+              <Shield className="h-7 w-7 text-blue-600" />
               <span className="text-2xl text-white">
                 Finestro
               </span>

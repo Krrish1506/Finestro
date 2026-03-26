@@ -47,7 +47,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-transparent">
       <Navigation currentPage={currentPage} onNavigate={handleNavigate} />
       <main className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">

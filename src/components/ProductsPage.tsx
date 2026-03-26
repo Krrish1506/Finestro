@@ -1,7 +1,8 @@
-import { Heart, LifeBuoy, Shield, TrendingUp, Search, FileCheck, Upload, FolderLock, Bell, BarChart3, ArrowRight } from "lucide-react";
+import { Heart, LifeBuoy, Shield, TrendingUp, Search, FileCheck, Upload, FolderLock, Bell, BarChart3, ArrowRight, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import { motion } from "framer-motion";
 
 export function ProductsPage() {
@@ -57,7 +58,7 @@ export function ProductsPage() {
       id: "life",
       name: "Life Insurance",
       icon: LifeBuoy,
-      color: "text-indigo-600",
+      color: "text-blue-600",
       bgColor: "bg-indigo-50/50",
       description: "Life coverage solutions including term plans, endowment, and ULIPs for financial security.",
       plans: [
@@ -98,62 +99,69 @@ export function ProductsPage() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-brand-dark relative overflow-hidden text-white py-24 px-4 sm:px-6 lg:px-8">
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-indigo-500/20 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-violet-600/20 blur-[120px] rounded-full"></div>
-        
+      <section 
+        className="text-white py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0052CC 0%, #0059E6 50%, #0066FF 100%)'
+        }}
+      >
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 blur-[100px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-white/5 blur-[80px] rounded-full"></div>
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 tracking-tight"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
           >
-            Digital <span className="gradient-text">Insurance</span> Infrastructure
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto font-medium"
-          >
-            Comprehensive tools for managing Health, Life, General Insurance, and Mutual Funds—all in one premium platform.
-          </motion.p>
+            <div className="w-20 h-20 bg-white/15 backdrop-blur-xl rounded-2xl flex items-center justify-center mx-auto mb-8 border border-white/30 shadow-lg rotate-3 hover:rotate-0 transition-transform duration-500">
+              <ShieldCheck className="h-10 w-10 text-white" />
+            </div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/40 text-white text-xs font-bold uppercase tracking-widest mb-8">
+              <Sparkles className="size-3" />
+              <span>Premium Products Suite</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight text-white">
+              Digital <span className="text-cyan-100">Infrastructure</span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto font-medium leading-relaxed">
+              Comprehensive tools for managing Health, Life, General Insurance, and Mutual Funds—all in one premium unified workspace.
+            </p>
+          </motion.div>
         </div>
       </section>
 
       {/* Key Features Overview */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F8FAFC]">
+      <section className="py-32 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Powerful Features for Every Product</h2>
-            <p className="text-lg text-slate-600">
-              Every product category comes with these comprehensive tools
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">Unified Core Features</h2>
+            <p className="text-xl text-slate-600 font-medium">
+              Every vertical in our platform is powered by these institutional tools.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                whileHover={{ y: -8 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3 }}
+                transition={{ delay: (index % 3) * 0.1 }}
               >
-                <Card className="glass h-full border-slate-200/50 shadow-ambient group cursor-pointer">
+                <Card className="glass relative rounded-[2.5rem] border-slate-200/50 shadow-ambient p-2 group hover:bg-white transition-all h-full cursor-default">
                   <CardHeader>
-                    <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                      <feature.icon className="h-6 w-6 text-indigo-600 group-hover:text-white" />
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <feature.icon className="h-7 w-7 text-blue-600" />
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-blue-400 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
                     </div>
-                    <CardTitle className="text-xl font-bold flex items-center justify-between">
-                      {feature.title}
-                      <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-600" />
-                    </CardTitle>
+                    <CardTitle className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-slate-600 leading-relaxed font-medium">{feature.description}</p>
+                    <p className="text-slate-600 font-medium leading-relaxed">{feature.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -163,59 +171,66 @@ export function ProductsPage() {
       </section>
 
       {/* Product Categories with Tabs */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white overflow-hidden relative">
+        <div className="max-w-7xl mx-auto relative z-10">
           <Tabs defaultValue="health" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto gap-4 bg-transparent mb-12">
-              {productCategories.map((category) => (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="flex flex-col items-center gap-3 py-6 rounded-2xl glass data-[state=active]:bg-white data-[state=active]:shadow-ambient data-[state=active]:border-indigo-200/50 transition-all duration-300"
-                >
-                  <div className={`p-2 rounded-xl bg-white shadow-sm`}>
-                    <category.icon className={`h-6 w-6 ${category.color}`} />
-                  </div>
-                  <span className="font-bold text-slate-900">{category.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="flex justify-center mb-16">
+              <TabsList className="bg-slate-100 rounded-[2.5rem] p-1.5 h-auto lg:h-20 border border-slate-200 shadow-inner w-full max-w-4xl grid grid-cols-2 lg:grid-cols-4 gap-2">
+                {productCategories.map((category) => (
+                  <TabsTrigger
+                    key={category.id}
+                    value={category.id}
+                    className="flex flex-row lg:flex-col items-center gap-3 px-6 py-4 rounded-[2rem] data-[state=active]:bg-white data-[state=active]:shadow-ambient data-[state=active]:border-indigo-200/50 transition-all duration-300 group"
+                  >
+                    <div className={`p-2 rounded-xl bg-slate-50 shadow-inner group-data-[state=active]:bg-white transition-colors`}>
+                      <category.icon className={`h-5 w-5 ${category.color}`} />
+                    </div>
+                    <span className="font-bold text-slate-700 group-data-[state=active]:text-slate-900">{category.name}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
             {productCategories.map((category) => (
               <TabsContent key={category.id} value={category.id}>
-                <div className="space-y-12">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-16"
+                >
                   {/* Category Header */}
-                  <div className={`glass relative rounded-3xl p-10 overflow-hidden border-slate-200/50`}>
-                    <div className={`absolute top-0 left-0 w-1.5 h-full ${category.color.replace('text-', 'bg-')}`}></div>
-                    <div className="flex items-center gap-6 relative z-10">
-                      <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-ambient-lg">
-                        <category.icon className={`h-10 w-10 ${category.color}`} />
+                  <div className={`glass relative rounded-[3rem] p-10 lg:p-16 overflow-hidden border-slate-200/50 shadow-ambient-lg`}>
+                    <div className={`absolute top-0 left-0 w-2 h-full ${category.color.replace('text-', 'bg-')}`}></div>
+                    <div className="flex flex-col lg:flex-row items-start lg:items-center gap-10 relative z-10">
+                      <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-ambient-lg border border-slate-100 shrink-0">
+                        <category.icon className={`h-12 w-12 ${category.color}`} />
                       </div>
                       <div>
-                        <h2 className="text-4xl font-bold text-slate-900 tracking-tight">{category.name}</h2>
-                        <p className="text-lg text-slate-600 mt-2 max-w-2xl font-medium">{category.description}</p>
+                        <Badge className="bg-blue-50 text-blue-600 border-blue-100 font-black text-[10px] tracking-widest uppercase mb-4 px-4">PRODUCT LINE</Badge>
+                        <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight leading-tight">{category.name}</h2>
+                        <p className="text-xl text-slate-600 mt-4 max-w-3xl font-medium leading-relaxed">{category.description}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Plans Grid */}
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-2 gap-8">
                     {category.plans.map((plan, index) => (
-                      <Card key={index} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <div className="flex justify-between items-start mb-2">
-                            <CardTitle>{plan.name}</CardTitle>
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                      <Card key={index} className="glass rounded-[2rem] border-slate-100 shadow-ambient overflow-hidden group hover:bg-white transition-all">
+                        <CardHeader className="p-8 pb-0">
+                          <div className="flex justify-between items-start mb-6">
+                            <CardTitle className="text-2xl font-bold text-slate-900">{plan.name}</CardTitle>
+                            <Badge className="bg-blue-600 text-white shadow-lg shadow-blue-200 rounded-full px-4 py-1.5 font-black text-xs">
                               {plan.coverage}
                             </Badge>
                           </div>
                         </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2">
+                        <CardContent className="p-8 pt-6">
+                          <ul className="space-y-4">
                             {plan.features.map((feature, fIndex) => (
-                              <li key={fIndex} className="flex items-start gap-2">
-                                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                                <span className="text-gray-600">{feature}</span>
+                              <li key={fIndex} className="flex items-center gap-4 group/item">
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full group-hover/item:scale-125 transition-transform shrink-0 shadow-lg shadow-indigo-300" />
+                                <span className="text-slate-700 font-bold leading-relaxed">{feature}</span>
                               </li>
                             ))}
                           </ul>
@@ -225,46 +240,35 @@ export function ProductsPage() {
                   </div>
 
                   {/* Category-specific Tools */}
-                  <Card className="border-2 border-blue-100">
-                    <CardHeader>
-                      <CardTitle>Available Tools for {category.name}</CardTitle>
-                      <CardDescription>
-                        Streamline your {category.name.toLowerCase()} operations with these integrated features
+                  <Card className="glass rounded-[3rem] border-indigo-100/50 shadow-ambient-lg overflow-hidden bg-indigo-50/10">
+                    <CardHeader className="p-10 lg:p-12 pb-6 text-center lg:text-left">
+                      <CardTitle className="text-2xl font-bold flex flex-col lg:flex-row items-center gap-3">
+                        <Zap className="h-8 w-8 text-blue-600" />
+                        Integrated Verticals for {category.name}
+                      </CardTitle>
+                      <CardDescription className="text-lg font-medium text-slate-600">
+                        Streamline your {category.name.toLowerCase()} operations with our embedded infrastructure.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-3 gap-4">
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Search className="h-5 w-5 text-blue-600" />
-                            <span>Quote Comparison</span>
+                    <CardContent className="p-10 lg:p-12 pt-0">
+                      <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                          { icon: Search, title: "Comparison Engine", desc: "Native side-by-side analysis for 20+ carriers." },
+                          { icon: Upload, title: "KYC Onboarding", desc: "Automated Aadhaar/PAN validation triggers." },
+                          { icon: Bell, title: "Lifecycle Alerts", desc: "Rule-based renewals and claim triggers." }
+                        ].map((tool, tIndex) => (
+                          <div key={tIndex} className="p-8 bg-white rounded-3xl border border-slate-100 shadow-ambient group hover:shadow-ambient-lg transition-all">
+                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                              <tool.icon className="h-6 w-6 text-blue-600 group-hover:text-white" />
+                            </div>
+                            <h5 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{tool.title}</h5>
+                            <p className="text-sm font-medium text-slate-600 leading-relaxed">{tool.desc}</p>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            Compare multiple providers side-by-side
-                          </p>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Upload className="h-5 w-5 text-blue-600" />
-                            <span>Document Management</span>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            Upload and verify KYC documents
-                          </p>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Bell className="h-5 w-5 text-blue-600" />
-                            <span>Renewal Reminders</span>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            Automated notifications for renewals
-                          </p>
-                        </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </motion.div>
               </TabsContent>
             ))}
           </Tabs>
@@ -272,73 +276,71 @@ export function ProductsPage() {
       </section>
 
       {/* Document Upload Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-blue-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl md:text-4xl mb-6">Secure Document Management</h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Upload, store, and manage all client documents in one secure, encrypted platform.
+      <section className="py-32 px-4 sm:px-6 lg:px-8 bg-slate-50/50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_20%_80%,rgba(99,102,241,0.05),transparent_50%)]"></div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <Badge className="bg-blue-50 text-blue-600 border-blue-100 font-black text-[10px] tracking-widest uppercase mb-6 px-4">DATA SOVEREIGNTY</Badge>
+              <h2 className="text-4xl lg:text-6xl font-bold text-slate-900 mb-8 tracking-tight leading-tight">Secure Vault <span className="gradient-text">Management</span></h2>
+              <p className="text-xl text-slate-600 mb-10 font-medium leading-relaxed">
+                A unified, encrypted document workspace for institutional document custody and client record management.
               </p>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    ✓
+              <div className="grid sm:grid-cols-2 gap-6">
+                {[
+                  { label: "Aadhaar / PAN Vault", desc: "Validated at source." },
+                  { label: "Medical History", desc: "Long-term cold storage." },
+                  { label: "Policy Ledger", desc: "Immutable trail." },
+                  { label: "KYC Cryptography", desc: "Bank-level standards." }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 p-5 bg-white rounded-2xl shadow-ambient border border-slate-100 group hover:shadow-ambient-lg transition-all">
+                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-slate-900 text-sm">{item.label}</h5>
+                      <p className="text-xs text-slate-500 font-bold">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-700">
-                      <span>Aadhaar & PAN verification</span> - Instant validation and secure storage
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    ✓
-                  </div>
-                  <div>
-                    <p className="text-gray-700">
-                      <span>Health card storage</span> - Keep all health records organized
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    ✓
-                  </div>
-                  <div>
-                    <p className="text-gray-700">
-                      <span>Policy documents & receipts</span> - Centralized access for you and clients
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    ✓
-                  </div>
-                  <div>
-                    <p className="text-gray-700">
-                      <span>Password protection</span> - Bank-level encryption and access control
-                    </p>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div className="bg-white rounded-lg shadow-xl p-8">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                <Upload className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-xl mb-2">Drag & Drop Documents</h3>
-                <p className="text-gray-600 mb-4">
-                  Support for PDF, JPG, PNG up to 10MB
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Badge variant="outline">Aadhaar</Badge>
-                  <Badge variant="outline">PAN</Badge>
-                  <Badge variant="outline">Health Card</Badge>
-                  <Badge variant="outline">Application Forms</Badge>
-                  <Badge variant="outline">KYC Docs</Badge>
-                </div>
+                ))}
               </div>
-            </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full scale-110"></div>
+              <Card className="glass relative rounded-[3rem] border-indigo-100 shadow-ambient-lg overflow-hidden p-1">
+                <div className="bg-white rounded-[2.8rem] border border-slate-50 p-12 text-center group cursor-pointer hover:border-indigo-100 transition-colors">
+                  <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
+                    <Upload className="h-10 w-10 text-blue-600 group-hover:text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4 text-slate-900">Enterprise Dropzone</h3>
+                  <p className="text-slate-600 font-medium mb-8 leading-relaxed max-w-sm mx-auto">
+                    Institutional-grade document ingestion. Drag PDFs, high-res images, or ZIP archives up to <span className="text-blue-600 font-black">100MB</span> per session.
+                  </p>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {["Aadhaar", "PAN", "Health Card", "Policy Ledger", "Form 16"].map((tag, i) => (
+                      <Badge key={i} variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200 font-black text-[10px] tracking-widest px-4 py-1.5 uppercase rounded-full">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="mt-12 pt-10 border-t border-slate-50">
+                    <Button size="lg" className="rounded-2xl h-14 px-10 shadow-ambient-lg font-bold bg-blue-600 text-white hover:bg-blue-700">
+                      Browse Files
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>

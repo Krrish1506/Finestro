@@ -1,10 +1,11 @@
-import { Mail, Phone, MapPin, MessageCircle, CreditCard } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, CreditCard, Sparkles, Send, Clock, Globe } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { motion } from "framer-motion";
 
 export function ContactPage() {
   const contactMethods = [
@@ -33,8 +34,8 @@ export function ContactPage() {
       icon: MapPin,
       title: "Our Location",
       value: "ASIA Campus, Ahmedabad",
-      description: "Drive In Rd, Sunrise Park, Thaltej",
-      link: "https://www.google.com/maps/dir//ASIA+Campus,+Drive+In+Rd,+Sunrise+Park,+Thaltej,+Ahmedabad,+Gujarat+380054/@23.0460875,72.4463752,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x395e8353dee254bb:0x6909d82c9319e0a0!2m2!1d72.5287768!2d23.0461088?entry=ttu&g_ep=EgoyMDI1MTAwOC4wIKXMDSoASAFQAw%3D%3D"
+      description: "Drive In Rd, Thaltej",
+      link: "https://www.google.com/maps"
     }
   ];
 
@@ -42,242 +43,226 @@ export function ContactPage() {
     { name: "UPI", supported: true },
     { name: "Net Banking", supported: true },
     { name: "Credit/Debit Card", supported: true },
-    { name: "Paytm", supported: true },
+    { name: "RTGS/NEFT", supported: true },
     { name: "Google Pay", supported: true },
     { name: "PhonePe", supported: true }
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6">Get in Touch</h1>
-          <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
-            Have questions? We're here to help. Reach out to us through any of these channels.
-          </p>
+      <section 
+        className="text-white py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0052CC 0%, #0059E6 50%, #0066FF 100%)'
+        }}
+      >
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 blur-[100px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-white/5 blur-[80px] rounded-full"></div>
+        <div className="max-w-7xl mx-auto text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/40 text-white text-xs font-bold uppercase tracking-widest mb-8">
+              <Sparkles className="size-3" />
+              <span>Support Excellence</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight text-white">
+              Get in <span className="text-cyan-100">Touch</span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto font-medium leading-relaxed">
+              Have questions about our enterprise infrastructure? Our team of fintech experts is ready to help you scale.
+            </p>
+          </motion.div>
         </div>
       </section>
 
       {/* Contact Methods */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-32 px-4 sm:px-6 lg:px-8 bg-white relative z-20">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {contactMethods.map((method, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <method.icon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <CardTitle className="text-lg">{method.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <a href={method.link} className="text-blue-600 hover:text-blue-700 mb-2 block">
-                    {method.value}
-                  </a>
-                  <p className="text-sm text-gray-600">{method.description}</p>
-                </CardContent>
-              </Card>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="glass text-center rounded-[2rem] border-slate-200/50 shadow-ambient p-2 group hover:bg-white transition-all cursor-pointer">
+                  <CardHeader>
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-ambient group-hover:shadow-ambient-lg transition-all border border-slate-100/50">
+                      <method.icon className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <CardTitle className="text-xl font-bold text-slate-900">{method.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <a href={method.link} className="text-blue-600 font-bold mb-3 block text-lg">
+                      {method.value}
+                    </a>
+                    <p className="text-slate-500 font-medium leading-relaxed">{method.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Contact Form & Info */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12">
+          <div className="grid lg:grid-cols-2 gap-20">
             {/* Contact Form */}
-            <div>
-              <h2 className="text-3xl mb-4">Send Us a Message</h2>
-              <p className="text-gray-600 mb-8">
-                Fill out the form below and our team will get back to you within 24 hours.
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-4xl font-bold text-slate-900 mb-6 tracking-tight">Send Us a Message</h2>
+              <p className="text-lg text-slate-600 mb-12 font-medium leading-relaxed">
+                Fill out the form below and our partnership division will reach out within one business cycle.
               </p>
-              <Card>
-                <CardContent className="pt-6">
-                  <form className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name *</Label>
-                        <Input id="firstName" placeholder="Enter first name" required />
+              <Card className="glass rounded-[2rem] border-slate-200/50 shadow-ambient-lg p-4 overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full"></div>
+                <CardContent className="pt-6 relative z-10">
+                  <form className="space-y-6">
+                    <div className="grid sm:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="firstName" className="font-bold text-slate-700">First Name</Label>
+                        <Input id="firstName" placeholder="Vikram" className="rounded-xl border-slate-200 bg-white/50 h-12" required />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name *</Label>
-                        <Input id="lastName" placeholder="Enter last name" required />
+                      <div className="space-y-3">
+                        <Label htmlFor="lastName" className="font-bold text-slate-700">Last Name</Label>
+                        <Input id="lastName" placeholder="Sharma" className="rounded-xl border-slate-200 bg-white/50 h-12" required />
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input id="email" type="email" placeholder="your.email@example.com" required />
+                    <div className="space-y-3">
+                      <Label htmlFor="email" className="font-bold text-slate-700">Business Email</Label>
+                      <Input id="email" type="email" placeholder="v.sharma@agency.in" className="rounded-xl border-slate-200 bg-white/50 h-12" required />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <Input id="phone" type="tel" placeholder="+91 98765 43210" required />
+                    <div className="space-y-3">
+                      <Label htmlFor="phone" className="font-bold text-slate-700">Phone Number</Label>
+                      <Input id="phone" type="tel" placeholder="+91 98765 43210" className="rounded-xl border-slate-200 bg-white/50 h-12" required />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="inquiryType">Inquiry Type *</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="inquiryType" className="font-bold text-slate-700">Inquiry Type</Label>
                       <Select>
-                        <SelectTrigger id="inquiryType">
-                          <SelectValue placeholder="Select inquiry type" />
+                        <SelectTrigger id="inquiryType" className="rounded-xl border-slate-200 bg-white/50 h-12">
+                          <SelectValue placeholder="Select intent" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="demo">Request Demo</SelectItem>
-                          <SelectItem value="pricing">Pricing Information</SelectItem>
-                          <SelectItem value="support">Technical Support</SelectItem>
-                          <SelectItem value="sales">Sales Inquiry</SelectItem>
-                          <SelectItem value="partnership">Partnership</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                        <SelectContent className="rounded-xl border-slate-200">
+                          <SelectItem value="demo">Enterprise Demo</SelectItem>
+                          <SelectItem value="pricing">License Pricing</SelectItem>
+                          <SelectItem value="support">Technical Integration</SelectItem>
+                          <SelectItem value="partnership">Strategic Partnership</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message *</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="message" className="font-bold text-slate-700">Message</Label>
                       <Textarea
                         id="message"
-                        placeholder="Tell us about your requirements..."
-                        rows={5}
+                        placeholder="Detail your operational requirements..."
+                        className="rounded-xl border-slate-200 bg-white/50 min-h-[150px]"
                         required
                       />
                     </div>
                     
-                    <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                    <Button type="submit" className="w-full rounded-2xl h-14 text-lg shadow-ambient group">
                       Submit Inquiry
+                      <Send className="size-4 ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                     </Button>
                   </form>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Additional Info */}
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl mb-4">Why Contact Us?</h2>
-                <div className="space-y-4">
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      ✓
+            <div className="space-y-12">
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-4xl font-bold text-slate-900 mb-10 tracking-tight">Why Partner with Us?</h2>
+                <div className="space-y-8">
+                  {[
+                    { icon: Clock, title: "24/7 Redundant Systems", desc: "Our tech support never sleeps. We ensure 99.9% uptime for your agent portal." },
+                    { icon: Globe, title: "Pan-India Coverage", desc: "Native support for operations in 22 regional languages." },
+                    { icon: Sparkles, title: "Next-Gen Infrastructure", desc: "Built on a secure dark-mesh architecture for ultimate data isolation." }
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-6 items-start group">
+                      <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <item.icon className="size-7" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">{item.title}</h3>
+                        <p className="text-slate-600 font-medium leading-relaxed">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="mb-1">Free Demo & Consultation</h3>
-                      <p className="text-gray-600 text-sm">
-                        Schedule a personalized demo to see how Finestro can transform your business.
-                      </p>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Payment Options */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <Card className="glass rounded-3xl border-slate-200/50 shadow-ambient">
+                  <CardHeader>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-ambient border border-slate-100">
+                        <CreditCard className="size-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-slate-900">Settlement Options</CardTitle>
+                        <CardDescription className="font-medium">Enterprise & subscription gateways</CardDescription>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      ✓
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3">
+                      {paymentMethods.map((method, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-3 bg-white/50 rounded-xl border border-slate-100/50"
+                        >
+                          <div className="w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">
+                            ✓
+                          </div>
+                          <span className="text-sm font-bold text-slate-700">{method.name}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <h3 className="mb-1">Custom Solutions</h3>
-                      <p className="text-gray-600 text-sm">
-                        We'll help tailor Finestro to your specific needs and workflow.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      ✓
-                    </div>
-                    <div>
-                      <h3 className="mb-1">Technical Support</h3>
-                      <p className="text-gray-600 text-sm">
-                        Get help with onboarding, training, and technical questions.
-                      </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Map Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <div className="glass rounded-[2rem] h-64 border-slate-200/50 shadow-ambient overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-slate-100 animate-pulse group-hover:hidden"></div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-indigo-50/50 group-hover:bg-indigo-50 transition-colors">
+                    <div className="text-center group-hover:scale-110 transition-transform duration-500">
+                      <MapPin className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                      <p className="font-bold text-slate-900">Corporate HQ: Ahmedabad, Gujarat</p>
+                      <p className="text-sm font-medium text-slate-500 mt-2">Drive In Rd, Thaltej | Open for Visits</p>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Payment Options */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <CardTitle>Payment Options</CardTitle>
-                      <CardDescription>Consulting & subscription payments accepted via</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    {paymentMethods.map((method, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-md"
-                      >
-                        <div className="w-4 h-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">
-                          ✓
-                        </div>
-                        <span className="text-sm">{method.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Office Hours */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Office Hours</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Monday - Friday</span>
-                    <span>9:00 AM - 7:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Saturday</span>
-                    <span>10:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Sunday</span>
-                    <span className="text-red-600">Closed</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Links */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Links</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <a href="#" className="block text-blue-600 hover:text-blue-700 text-sm">
-                    FAQ & Help Center
-                  </a>
-                  <a href="#" className="block text-blue-600 hover:text-blue-700 text-sm">
-                    Video Tutorials
-                  </a>
-                  <a href="#" className="block text-blue-600 hover:text-blue-700 text-sm">
-                    Documentation
-                  </a>
-                  <a href="#" className="block text-blue-600 hover:text-blue-700 text-sm">
-                    Agent Community Forum
-                  </a>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Map Section (Placeholder) */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl mb-8 text-center">Our Location</h2>
-          <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Corporate Office: Mumbai, Maharashtra</p>
-              <p className="text-sm text-gray-500 mt-2">Interactive map would be integrated here</p>
+              </motion.div>
             </div>
           </div>
         </div>

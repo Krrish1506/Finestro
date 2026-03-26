@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Users, FileText, TrendingUp, Bell, Download, Calendar, Search, Plus, Facebook, Instagram, Linkedin, Twitter, FileImage, Upload, Trash2, Eye, CheckCircle, Clock, AlertCircle, ArrowUpDown, X } from "lucide-react";
+import { Users, FileText, TrendingUp, Bell, Download, Calendar, Search, Plus, Facebook, Instagram, Linkedin, Twitter, FileImage, Upload, Trash2, Eye, CheckCircle, Clock, ArrowUpDown, X, Zap, Sparkles, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -13,8 +13,11 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import {
+  type UploadedDocument,
+  type Reminder,
+  type Client,
   getDocuments,
   addDocument,
   deleteDocument,
@@ -22,27 +25,30 @@ import {
   downloadBase64File,
   getReminders,
   addReminder,
-  updateReminder,
   deleteReminder,
   markReminderComplete,
   getClients,
   addClient,
   formatFileSize,
   fileToBase64,
-  getUpcomingReminders,
-  type UploadedDocument,
-  type Reminder,
-  type Client
+  getUpcomingReminders
 } from "../lib/storage";
+
+interface Policy {
+  provider: string;
+  plan: string;
+  premium: string;
+  coverage: string;
+  cashless: string;
+  rating: number;
+}
 
 export function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortColumn, setSortColumn] = useState<string>("");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Policy | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
-  const [isMarketingDialogOpen, setIsMarketingDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedDocument[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -114,28 +120,31 @@ export function DashboardPage() {
     { month: "Oct", target: 420000, achieved: 370000 }
   ];
 
-  const policyComparison = [
+  const policyComparison: Policy[] = [
     { provider: "Star Health", plan: "Comprehensive", premium: "₹12,000", coverage: "₹10L", cashless: "Yes", rating: 4.5 },
     { provider: "HDFC Ergo", plan: "Premium Plus", premium: "₹15,000", coverage: "₹15L", cashless: "Yes", rating: 4.7 },
     { provider: "ICICI Lombard", plan: "Health Shield", premium: "₹11,500", coverage: "₹8L", cashless: "Yes", rating: 4.3 },
     { provider: "Care Health", plan: "Supreme", premium: "₹13,500", coverage: "₹12L", cashless: "Yes", rating: 4.6 },
   ];
 
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortDirection("asc");
+  const handleSort = (key: keyof Policy) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
+    setSortConfig({ key, direction });
   };
 
   const sortedPolicies = [...policyComparison].sort((a, b) => {
-    if (!sortColumn) return 0;
-    const aVal = a[sortColumn as keyof typeof a];
-    const bVal = b[sortColumn as keyof typeof b];
-    const modifier = sortDirection === "asc" ? 1 : -1;
-    return aVal > bVal ? modifier : -modifier;
+    const { key, direction } = sortConfig;
+    if (!key) return 0;
+    const aVal = a[key];
+    const bVal = b[key];
+    const modifier = direction === "asc" ? 1 : -1;
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return aVal.localeCompare(bVal) * modifier;
+    }
+    return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * modifier;
   });
 
   const handleAddClient = (e: React.FormEvent<HTMLFormElement>) => {
@@ -171,7 +180,6 @@ export function DashboardPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast.error("File too large", {
           description: "Please select a file smaller than 10MB"
@@ -184,23 +192,14 @@ export function DashboardPage() {
 
   const handleFileUpload = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (!selectedFile) {
-      toast.error("No file selected");
-      return;
-    }
-
-    if (!documentType) {
-      toast.error("Please select document type");
+    if (!selectedFile || !documentType) {
+      toast.error("Please fill all required fields");
       return;
     }
 
     setUploadingFile(true);
-
     try {
-      // Convert file to base64
       const base64 = await fileToBase64(selectedFile);
-      
       const clientName = clients.find(c => c.id.toString() === documentClient)?.name || "Unknown";
       
       const newDocument: UploadedDocument = {
@@ -216,58 +215,37 @@ export function DashboardPage() {
 
       addDocument(newDocument);
       setUploadedFiles(getDocuments());
-      
-      toast.success("Document uploaded successfully!", {
-        description: `${selectedFile.name} has been added to the document center.`
-      });
-
-      // Reset form
+      toast.success("Document uploaded successfully!");
+      setIsUploadDialogOpen(false);
       setSelectedFile(null);
       setDocumentType("");
       setDocumentClient("");
-      setIsUploadDialogOpen(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     } catch (error) {
-      toast.error("Upload failed", {
-        description: "There was an error uploading the file. Please try again."
-      });
+      toast.error("Upload failed");
     } finally {
       setUploadingFile(false);
     }
   };
 
   const handleFileDelete = (id: string) => {
-    const doc = getDocumentById(id);
-    if (doc) {
-      deleteDocument(id);
-      setUploadedFiles(getDocuments());
-      toast.success("Document deleted successfully!", {
-        description: `${doc.name} has been removed.`
-      });
-    }
+    deleteDocument(id);
+    setUploadedFiles(getDocuments());
+    toast.success("Document deleted");
   };
 
   const handleFileDownload = (id: string) => {
     const doc = getDocumentById(id);
-    if (doc) {
-      if (doc.file) {
-        downloadBase64File(doc.file, doc.name, doc.mimeType);
-        toast.success(`Downloading ${doc.name}...`);
-      } else {
-        toast.info("This is a demo document", {
-          description: "No file data available for download."
-        });
-      }
+    if (doc?.file) {
+      downloadBase64File(doc.file, doc.name, doc.mimeType);
+      toast.success(`Downloading ${doc.name}...`);
+    } else {
+      toast.error("File data missing");
     }
   };
 
   const handleCreateReminder = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
     const client = clients.find(c => c.id.toString() === reminderFormData.clientId);
-    
     if (!client) {
       toast.error("Please select a client");
       return;
@@ -287,1071 +265,485 @@ export function DashboardPage() {
 
     addReminder(newReminder);
     setReminders(getReminders());
-    
-    toast.success("Reminder created!", {
-      description: `You'll be notified on ${new Date(reminderFormData.date).toLocaleDateString()}.`
-    });
-
-    // Reset form
-    setReminderFormData({
-      clientId: "",
-      type: "",
-      date: "",
-      priority: "",
-      notes: ""
-    });
+    toast.success("Reminder created!");
     setIsReminderDialogOpen(false);
-
-    // Simulate notification popup after 2 seconds
-    setTimeout(() => {
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 5000);
-    }, 2000);
+    setReminderFormData({ clientId: "", type: "", date: "", priority: "", notes: "" });
   };
 
   const handleMarkReminderComplete = (id: string) => {
-    const reminder = reminders.find(r => r.id === id);
-    if (reminder) {
-      markReminderComplete(id);
-      setReminders(getReminders());
-      toast.success("Reminder marked as complete!", {
-        description: `${reminder.type} for ${reminder.clientName} is done.`
-      });
-    }
+    markReminderComplete(id);
+    setReminders(getReminders());
+    toast.success("Task completed!");
   };
 
   const handleDeleteReminder = (id: string) => {
     deleteReminder(id);
     setReminders(getReminders());
-    toast.success("Reminder deleted!");
+    toast.success("Reminder removed");
   };
 
   const handleGenerateMarketing = (platform: string) => {
-    toast.success(`${platform} post generated!`, {
-      description: "Preview is ready. You can edit and publish."
-    });
+    toast.success(`${platform} content ready!`);
   };
 
-  const handleDownloadReport = (reportName: string) => {
-    toast.success(`${reportName} downloaded!`, {
-      description: "Check your downloads folder."
-    });
+  const handleDownloadReport = (name: string) => {
+    toast.success(`Generating ${name}...`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Real-time Notification Popup */}
-        {showNotification && (
-          <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-right">
-            <Card className="w-80 border-2 border-orange-500 shadow-lg">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-orange-600" />
-                    <CardTitle className="text-base">Reminder Alert</CardTitle>
-                  </div>
-                  <button onClick={() => setShowNotification(false)} className="text-gray-400 hover:text-gray-600">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {getUpcomingReminders().slice(0, 1).map(reminder => (
-                  <div key={reminder.id}>
-                    <p className="text-sm mb-1">{reminder.clientName}</p>
-                    <p className="text-sm text-gray-600 mb-3">{reminder.type} due on {new Date(reminder.date).toLocaleDateString()}</p>
-                    <Button 
-                      size="sm" 
-                      className="w-full bg-orange-600 hover:bg-orange-700"
-                      onClick={() => {
-                        setShowNotification(false);
-                        // Could scroll to reminders tab here
-                      }}
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl mb-2">Agent Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's your business overview.</p>
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <Badge variant="outline" className="mb-4 bg-blue-50 text-blue-600 border-blue-200 font-bold px-4">WORKSPACE</Badge>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900">Agent <span className="text-blue-600">Dashboard</span></h1>
+            <p className="text-lg text-slate-600 font-medium mt-2">Managing your portfolio with precision.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-xl border-blue-200 shadow-sm font-bold h-12 px-6 bg-white hover:bg-blue-50">
+              <Download className="mr-2 h-4 w-4" /> Export Data
+            </Button>
+            <Button className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg font-bold h-12 px-6">
+              <Plus className="mr-2 h-4 w-4" /> Quick Action
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5 }}
-              className="group relative"
-            >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-[22px] opacity-0 group-hover:opacity-100 transition duration-300 blur-sm"></div>
-              <Card className="glass relative rounded-[20px] border-slate-200/50 shadow-ambient overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {stats.map((stat, i) => (
+            <motion.div key={i} whileHover={{ y: -5 }} className="group">
+              <Card className="glass rounded-[2rem] border-slate-200/50 shadow-ambient overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.title}</span>
-                  <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center shadow-inner`}>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.title}</span>
+                  <div className={`w-10 h-10 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
                     <stat.icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold tracking-tight text-slate-900 mb-1">{stat.value}</div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                      stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {stat.change}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">vs last month</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success" className="h-5 px-1.5 text-[10px]">{stat.change}</Badge>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Growth</span>
                   </div>
                 </CardContent>
-                
-                {/* Decorative Sparkline pattern (SVG) */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 opacity-20 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        <Tabs defaultValue="clients" className="space-y-6">
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="claims">Claim Tracking</TabsTrigger>
-            <TabsTrigger value="comparison">Compare Plans</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="reminders">Reminders</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
-          </TabsList>
-
-          {/* Client Management Tab */}
-          <TabsContent value="clients" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <div>
-                    <CardTitle>Client Management</CardTitle>
-                    <CardDescription>Manage and track all your clients in one place</CardDescription>
-                  </div>
-                  <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Client
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Client</DialogTitle>
-                        <DialogDescription>Enter client details to add them to your portfolio</DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleAddClient} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="clientName">Full Name *</Label>
-                          <Input id="clientName" name="clientName" placeholder="Enter client name" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="clientEmail">Email *</Label>
-                          <Input id="clientEmail" name="clientEmail" type="email" placeholder="client@example.com" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="clientPhone">Phone *</Label>
-                          <Input id="clientPhone" name="clientPhone" type="tel" placeholder="+91 98765 43210" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="clientType">Policy Interest</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="health">Health Insurance</SelectItem>
-                              <SelectItem value="life">Life Insurance</SelectItem>
-                              <SelectItem value="motor">Motor Insurance</SelectItem>
-                              <SelectItem value="mutual">Mutual Funds</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <DialogFooter>
-                          <Button type="button" variant="outline" onClick={() => setIsAddClientOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                            Add Client
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search clients..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Clients</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="renewal">Renewal Due</SelectItem>
-                      <SelectItem value="new">New</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Policies</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Last Contact</TableHead>
-                        <TableHead>Annual Premium</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())).map((client) => (
-                        <TableRow key={client.id}>
-                          <TableCell>{client.name}</TableCell>
-                          <TableCell className="text-sm text-gray-600">{client.email}</TableCell>
-                          <TableCell>{client.policies}</TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              client.status === "Active" ? "default" :
-                              client.status === "Renewal Due" ? "destructive" :
-                              "secondary"
-                            }>
-                              {client.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{client.lastContact}</TableCell>
-                          <TableCell>₹{Number(client.premium).toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => toast.info("Opening client details...")}>
-                              View Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3 pb-4 border-b last:border-b-0">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2" />
-                      <div className="flex-1">
-                        <p className="text-sm">{activity.action}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Claim Tracking Tab */}
-          <TabsContent value="claims" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <div>
-                    <CardTitle>Claim Tracking</CardTitle>
-                    <CardDescription>Monitor claim status with real-time updates</CardDescription>
-                  </div>
-                  <Dialog open={isClaimDialogOpen} onOpenChange={setIsClaimDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Submit Claim
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Submit New Claim</DialogTitle>
-                        <DialogDescription>Enter claim details for processing</DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleSubmitClaim} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="claimClient">Client Name *</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select client" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {clients.map(c => (
-                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="claimType">Claim Type *</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="health">Health Insurance</SelectItem>
-                              <SelectItem value="life">Life Insurance</SelectItem>
-                              <SelectItem value="motor">Motor Insurance</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="claimAmount">Claim Amount *</Label>
-                          <Input id="claimAmount" type="number" placeholder="Enter amount" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="claimDescription">Description *</Label>
-                          <Textarea id="claimDescription" placeholder="Describe the claim..." rows={3} required />
-                        </div>
-                        <DialogFooter>
-                          <Button type="button" variant="outline" onClick={() => setIsClaimDialogOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                            Submit Claim
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {claims.map((claim) => (
-                    <Card key={claim.id} className="border-2">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">{claim.client}</CardTitle>
-                            <CardDescription>Claim ID: {claim.id} • {claim.type} Insurance</CardDescription>
-                          </div>
-                          <Badge variant={
-                            claim.status >= 90 ? "default" :
-                            claim.status >= 60 ? "secondary" :
-                            "outline"
-                          }>
-                            {claim.stage}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Amount: {claim.amount}</span>
-                          <span className="text-gray-600">Submitted: {claim.date}</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Progress</span>
-                            <span>{claim.status}%</span>
-                          </div>
-                          <Progress value={claim.status} />
-                        </div>
-                        <div className="grid grid-cols-4 gap-2">
-                          <div className="text-center">
-                            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${claim.status >= 25 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-                              {claim.status >= 25 ? <CheckCircle className="h-4 w-4" /> : '1'}
-                            </div>
-                            <p className="text-xs mt-1">Submitted</p>
-                          </div>
-                          <div className="text-center">
-                            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${claim.status >= 50 ? 'bg-blue-600 text-white' : claim.status >= 25 ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}>
-                              {claim.status >= 50 ? <CheckCircle className="h-4 w-4" /> : claim.status >= 25 ? <Clock className="h-4 w-4" /> : '2'}
-                            </div>
-                            <p className="text-xs mt-1">Review</p>
-                          </div>
-                          <div className="text-center">
-                            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${claim.status >= 75 ? 'bg-blue-600 text-white' : claim.status >= 50 ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}>
-                              {claim.status >= 75 ? <CheckCircle className="h-4 w-4" /> : claim.status >= 50 ? <Clock className="h-4 w-4" /> : '3'}
-                            </div>
-                            <p className="text-xs mt-1">Approved</p>
-                          </div>
-                          <div className="text-center">
-                            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${claim.status >= 100 ? 'bg-green-600 text-white' : claim.status >= 75 ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}>
-                              {claim.status >= 100 ? <CheckCircle className="h-4 w-4" /> : claim.status >= 75 ? <Clock className="h-4 w-4" /> : '4'}
-                            </div>
-                            <p className="text-xs mt-1">Settled</p>
-                          </div>
-                        </div>
-                        <Button variant="outline" className="w-full" onClick={() => toast.info("Viewing claim details...")}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Full Details
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Policy Comparison Tab */}
-          <TabsContent value="comparison" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Policy Comparison</CardTitle>
-                <CardDescription>Compare policies side-by-side with sortable columns</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <button onClick={() => handleSort("provider")} className="flex items-center gap-1 hover:text-blue-600">
-                            Provider <ArrowUpDown className="h-4 w-4" />
-                          </button>
-                        </TableHead>
-                        <TableHead>
-                          <button onClick={() => handleSort("plan")} className="flex items-center gap-1 hover:text-blue-600">
-                            Plan <ArrowUpDown className="h-4 w-4" />
-                          </button>
-                        </TableHead>
-                        <TableHead>
-                          <button onClick={() => handleSort("premium")} className="flex items-center gap-1 hover:text-blue-600">
-                            Premium <ArrowUpDown className="h-4 w-4" />
-                          </button>
-                        </TableHead>
-                        <TableHead>
-                          <button onClick={() => handleSort("coverage")} className="flex items-center gap-1 hover:text-blue-600">
-                            Coverage <ArrowUpDown className="h-4 w-4" />
-                          </button>
-                        </TableHead>
-                        <TableHead>Cashless</TableHead>
-                        <TableHead>
-                          <button onClick={() => handleSort("rating")} className="flex items-center gap-1 hover:text-blue-600">
-                            Rating <ArrowUpDown className="h-4 w-4" />
-                          </button>
-                        </TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedPolicies.map((policy, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{policy.provider}</TableCell>
-                          <TableCell>{policy.plan}</TableCell>
-                          <TableCell>{policy.premium}</TableCell>
-                          <TableCell>{policy.coverage}</TableCell>
-                          <TableCell>
-                            <Badge variant="default">{policy.cashless}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <span>{policy.rating}</span>
-                              <span className="text-yellow-500">★</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Button size="sm" variant="outline" onClick={() => toast.success("Quote requested!")}>
-                              Get Quote
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Documents Tab */}
-          <TabsContent value="documents" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <div>
-                    <CardTitle>Document Center</CardTitle>
-                    <CardDescription>Secure storage for all client documents ({uploadedFiles.length} files)</CardDescription>
-                  </div>
-                  <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Document
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Upload Document</DialogTitle>
-                        <DialogDescription>Upload client documents securely (Max 10MB)</DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleFileUpload} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="fileUpload">Select File *</Label>
-                          <Input
-                            id="fileUpload"
-                            ref={fileInputRef}
-                            type="file"
-                            onChange={handleFileSelect}
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                            required
-                          />
-                          {selectedFile && (
-                            <p className="text-sm text-gray-600">
-                              Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="docType">Document Type *</Label>
-                          <Select value={documentType} onValueChange={setDocumentType} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Aadhaar">Aadhaar Card</SelectItem>
-                              <SelectItem value="PAN">PAN Card</SelectItem>
-                              <SelectItem value="Health Card">Health Card</SelectItem>
-                              <SelectItem value="Policy">Policy Document</SelectItem>
-                              <SelectItem value="KYC">KYC Document</SelectItem>
-                              <SelectItem value="Application">Application Form</SelectItem>
-                              <SelectItem value="Other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="docClient">Client (Optional)</Label>
-                          <Select value={documentClient} onValueChange={setDocumentClient}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select client" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {clients.map(c => (
-                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <DialogFooter>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setIsUploadDialogOpen(false);
-                              setSelectedFile(null);
-                              setDocumentType("");
-                              setDocumentClient("");
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            type="submit" 
-                            className="bg-blue-600 hover:bg-blue-700"
-                            disabled={uploadingFile}
-                          >
-                            {uploadingFile ? "Uploading..." : "Upload"}
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>File Name</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Size</TableHead>
-                        <TableHead>Upload Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {uploadedFiles.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                            No documents uploaded yet. Click "Upload Document" to add files.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        uploadedFiles.map((file) => (
-                          <TableRow key={file.id}>
-                            <TableCell className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-blue-600" />
-                              {file.name}
-                            </TableCell>
-                            <TableCell>{file.clientName || "—"}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">{file.type}</Badge>
-                            </TableCell>
-                            <TableCell>{file.size}</TableCell>
-                            <TableCell>{new Date(file.date).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleFileDownload(file.id)}
-                                  title="Download"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleFileDelete(file.id)}
-                                  title="Delete"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Reminders Tab */}
-          <TabsContent value="reminders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <div>
-                    <CardTitle>Reminders & Notifications</CardTitle>
-                    <CardDescription>
-                      {reminders.filter(r => !r.completed).length} active reminders
-                    </CardDescription>
-                  </div>
-                  <Dialog open={isReminderDialogOpen} onOpenChange={setIsReminderDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Reminder
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create New Reminder</DialogTitle>
-                        <DialogDescription>Set up automated notifications for important dates</DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleCreateReminder} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="reminderClient">Client *</Label>
-                          <Select 
-                            value={reminderFormData.clientId} 
-                            onValueChange={(value) => setReminderFormData({...reminderFormData, clientId: value})}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select client" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {clients.map(c => (
-                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reminderType">Reminder Type *</Label>
-                          <Select 
-                            value={reminderFormData.type}
-                            onValueChange={(value) => setReminderFormData({...reminderFormData, type: value})}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Policy Renewal">Policy Renewal</SelectItem>
-                              <SelectItem value="Premium Payment">Premium Payment</SelectItem>
-                              <SelectItem value="Follow-up Call">Follow-up Call</SelectItem>
-                              <SelectItem value="Document Collection">Document Collection</SelectItem>
-                              <SelectItem value="Claim Follow-up">Claim Follow-up</SelectItem>
-                              <SelectItem value="Birthday Wishes">Birthday Wishes</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reminderDate">Date *</Label>
-                          <Input 
-                            id="reminderDate" 
-                            type="date" 
-                            value={reminderFormData.date}
-                            onChange={(e) => setReminderFormData({...reminderFormData, date: e.target.value})}
-                            min={new Date().toISOString().split('T')[0]}
-                            required 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reminderPriority">Priority *</Label>
-                          <Select 
-                            value={reminderFormData.priority}
-                            onValueChange={(value) => setReminderFormData({...reminderFormData, priority: value})}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select priority" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="High">High</SelectItem>
-                              <SelectItem value="Medium">Medium</SelectItem>
-                              <SelectItem value="Low">Low</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reminderNotes">Notes (Optional)</Label>
-                          <Textarea 
-                            id="reminderNotes"
-                            value={reminderFormData.notes}
-                            onChange={(e) => setReminderFormData({...reminderFormData, notes: e.target.value})}
-                            placeholder="Add any additional notes..."
-                            rows={3}
-                          />
-                        </div>
-                        <DialogFooter>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setIsReminderDialogOpen(false);
-                              setReminderFormData({
-                                clientId: "",
-                                type: "",
-                                date: "",
-                                priority: "",
-                                notes: ""
-                              });
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                            Create Reminder
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {reminders.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      No reminders yet. Click "Create Reminder" to add one.
-                    </div>
-                  ) : (
-                    reminders.map((reminder) => (
-                      <div 
-                        key={reminder.id} 
-                        className={`flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow ${
-                          reminder.completed ? 'bg-gray-50 opacity-60' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 flex-1">
-                          <Calendar className={`h-5 w-5 ${reminder.completed ? 'text-gray-400' : 'text-blue-600'}`} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className={reminder.completed ? 'line-through text-gray-500' : ''}>{reminder.type}</p>
-                              {reminder.completed && <Badge variant="outline">Completed</Badge>}
-                            </div>
-                            <p className="text-sm text-gray-600">{reminder.clientName}</p>
-                            {reminder.notes && <p className="text-xs text-gray-500 mt-1">{reminder.notes}</p>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant={
-                            reminder.priority === "High" ? "destructive" :
-                            reminder.priority === "Medium" ? "default" :
-                            "secondary"
-                          }>
-                            {reminder.priority}
-                          </Badge>
-                          <span className="text-sm text-gray-600 min-w-[100px]">
-                            {new Date(reminder.date).toLocaleDateString()}
-                          </span>
-                          <div className="flex gap-2">
-                            {!reminder.completed && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleMarkReminderComplete(reminder.id)}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeleteReminder(reminder.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales Performance</CardTitle>
-                  <CardDescription>Track your monthly targets</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={salesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <RechartsTooltip />
-                      <Legend />
-                      <Bar dataKey="target" fill="#94a3b8" name="Target" />
-                      <Bar dataKey="achieved" fill="#3b82f6" name="Achieved" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Trend</CardTitle>
-                  <CardDescription>Monthly revenue over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={salesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <RechartsTooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="achieved" stroke="#3b82f6" strokeWidth={2} name="Revenue" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+        <main className="mt-8">
+          <Tabs defaultValue="clients" className="space-y-10">
+            <div className="flex justify-start overflow-x-auto pb-4 scrollbar-hide">
+              <TabsList className="bg-slate-100/80 rounded-[2rem] p-1.5 h-auto border border-slate-200/50 shadow-inner flex">
+                {[
+                  { value: "clients", label: "Clients", icon: Users },
+                  { value: "claims", label: "Claims", icon: FileText },
+                  { value: "comparison", label: "Comparison", icon: ArrowUpDown },
+                  { value: "documents", label: "Repository", icon: Upload },
+                  { value: "reminders", label: "Alerts", icon: Bell },
+                  { value: "reports", label: "Intelligence", icon: BarChart3 },
+                  { value: "marketing", label: "Growth", icon: Sparkles }
+                ].map((tab) => (
+                  <TabsTrigger 
+                    key={tab.value}
+                    value={tab.value} 
+                    className="flex items-center gap-2 px-6 py-3 rounded-[1.5rem] data-[state=active]:bg-white data-[state=active]:shadow-ambient data-[state=active]:text-blue-600 transition-all font-bold text-slate-500"
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Download Reports</CardTitle>
-                <CardDescription>Generate and download comprehensive reports</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => handleDownloadReport("Client Portfolio Report")}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Client Portfolio Report
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => handleDownloadReport("Monthly Sales Summary")}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Monthly Sales Summary
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => handleDownloadReport("Commission Statement")}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Commission Statement
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => handleDownloadReport("Renewal Forecast")}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Renewal Forecast
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Marketing Toolkit Tab */}
-          <TabsContent value="marketing" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Social Media Content Generator</CardTitle>
-                <CardDescription>Create professional posts for your social channels</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <label className="text-sm mb-3 block">Select Platform</label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <Button 
-                        variant="outline" 
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                        onClick={() => handleGenerateMarketing("Facebook")}
-                      >
-                        <Facebook className="h-6 w-6 text-blue-600" />
-                        <span className="text-sm">Facebook</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                        onClick={() => handleGenerateMarketing("Instagram")}
-                      >
-                        <Instagram className="h-6 w-6 text-pink-600" />
-                        <span className="text-sm">Instagram</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                        onClick={() => handleGenerateMarketing("LinkedIn")}
-                      >
-                        <Linkedin className="h-6 w-6 text-blue-700" />
-                        <span className="text-sm">LinkedIn</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex flex-col items-center gap-2 h-auto py-4"
-                        onClick={() => handleGenerateMarketing("X")}
-                      >
-                        <Twitter className="h-6 w-6 text-blue-400" />
-                        <span className="text-sm">X (Twitter)</span>
-                      </Button>
+            {/* Clients Tab */}
+            <TabsContent value="clients" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-8">
+                <Card className="glass rounded-[2.5rem] border-slate-200/50 shadow-ambient overflow-hidden">
+                  <CardHeader className="p-8 lg:p-10 border-b border-slate-100">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+                      <div>
+                        <CardTitle className="text-2xl font-bold text-slate-900">Client Portfolio</CardTitle>
+                        <CardDescription className="text-slate-500 font-medium tracking-tight">Managing {clients.length} institutional accounts</CardDescription>
+                      </div>
+                      <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="bg-blue-600 hover:bg-indigo-700 shadow-lg rounded-2xl h-12 px-6 font-bold">
+                            <Plus className="h-5 w-5 mr-2" /> Onboard Client
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="glass rounded-[2.5rem] border-slate-200/50 p-8">
+                          <DialogHeader>
+                            <DialogTitle className="text-2xl font-bold">New Client Registration</DialogTitle>
+                            <DialogDescription>Initialize a new secure client profile.</DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleAddClient} className="space-y-6 pt-4">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Legal Name</Label>
+                              <Input name="clientName" placeholder="Rahul Sharma" required className="rounded-xl h-12" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</Label>
+                                <Input name="clientEmail" type="email" placeholder="rahul@domain.com" required className="rounded-xl h-12" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone</Label>
+                                <Input name="clientPhone" type="tel" placeholder="+91 XXXX" required className="rounded-xl h-12" />
+                              </div>
+                            </div>
+                            <Button type="submit" className="w-full bg-blue-600 h-12 rounded-xl font-bold shadow-lg mt-4">Generate Profile</Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                  </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+                      <div className="relative max-w-md">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          placeholder="Search identity or records..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-11 rounded-2xl h-11 border-slate-200 bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/50 hover:bg-transparent">
+                            <TableHead className="py-5 pl-8 text-[10px] font-black uppercase tracking-widest text-slate-500">Client Identity</TableHead>
+                            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Status</TableHead>
+                            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500">Policies</TableHead>
+                            <TableHead className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-right pr-8">Premium Vol.</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())).map((client) => (
+                            <TableRow key={client.id} className="group border-b border-slate-50 hover:bg-blue-50/20 transition-colors">
+                              <TableCell className="py-6 pl-8">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-500 shadow-sm">{client.name.charAt(0)}</div>
+                                  <div>
+                                    <div className="font-bold text-slate-900 group-hover:text-blue-600">{client.name}</div>
+                                    <div className="text-xs text-slate-400 font-medium">{client.email}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge className={`rounded-full px-3 py-1 font-black text-[10px] tracking-tight ${
+                                  client.status === "Active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-blue-50 text-blue-600 border-indigo-100"
+                                }`}>{client.status.toUpperCase()}</Badge>
+                              </TableCell>
+                              <TableCell className="font-bold text-slate-600">{client.policies} Active</TableCell>
+                              <TableCell className="text-right pr-8 font-black text-slate-900">₹{Number(client.premium).toLocaleString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
 
-                  <div>
-                    <Label htmlFor="contentTheme">Content Theme</Label>
-                    <Select>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Select theme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="health">Health Insurance Tips</SelectItem>
-                        <SelectItem value="life">Life Insurance Benefits</SelectItem>
-                        <SelectItem value="savings">Tax Saving Strategies</SelectItem>
-                        <SelectItem value="festival">Festival Offers</SelectItem>
-                        <SelectItem value="testimonial">Client Testimonial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Card className="bg-gray-50">
-                    <CardHeader>
-                      <CardTitle className="text-base">Preview</CardTitle>
+            {/* Claims Tab */}
+            <TabsContent value="claims" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {claims.map((claim) => (
+                  <Card key={claim.id} className="glass rounded-[2rem] border-slate-200/50 shadow-ambient overflow-hidden group hover:bg-white transition-all">
+                    <CardHeader className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <Badge variant="outline" className="text-[10px] font-black">{claim.id}</Badge>
+                        <Badge variant="info" className="text-[10px] font-black">{claim.stage}</Badge>
+                      </div>
+                      <CardTitle className="text-xl font-bold tracking-tight mb-1 group-hover:text-blue-600 transition-colors uppercase">{claim.client}</CardTitle>
+                      <CardDescription className="font-bold text-[10px] uppercase tracking-widest text-slate-400">{claim.type} • {claim.date}</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="bg-white p-4 rounded-lg border">
-                        <p className="mb-3">🏥 <strong>Protect Your Health, Secure Your Future</strong></p>
-                        <p className="text-sm text-gray-600 mb-3">
-                          Don't wait for a medical emergency to realize the importance of health insurance. 
-                          Get comprehensive coverage starting at just ₹500/month.
-                        </p>
-                        <p className="text-sm text-blue-600">
-                          💡 Call us today for a free consultation!<br />
-                          📞 +91 98765 43210
-                        </p>
+                    <CardContent className="p-6 pt-0 space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black tracking-widest uppercase text-slate-400">
+                          <span>Progress</span>
+                          <span>{claim.status}%</span>
+                        </div>
+                        <Progress value={claim.status} className="h-2" />
+                      </div>
+                      <div className="flex items-center gap-4 py-4 border-t border-slate-50">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600"><TrendingUp className="h-5 w-5" /></div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated Value</p>
+                          <p className="text-lg font-black text-slate-900 tracking-tight">{claim.amount}</p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-              </CardContent>
-            </Card>
+                ))}
+              </motion.div>
+            </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Marketing Materials</CardTitle>
-                <CardDescription>Generate pamphlets and promotional materials</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => toast.success("Health Insurance Brochure generated!")}
-                  >
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Health Insurance Brochure
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => toast.success("Life Insurance Flyer generated!")}
-                  >
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Life Insurance Flyer
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => toast.success("Mutual Funds Explainer generated!")}
-                  >
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Mutual Funds Explainer
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start"
-                    onClick={() => toast.success("Custom Pamphlet generated!")}
-                  >
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Custom Pamphlet
-                  </Button>
+            {/* Comparison Tab */}
+            <TabsContent value="comparison" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <Card className="glass rounded-[2.5rem] border-slate-200/50 shadow-ambient overflow-hidden">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader className="bg-slate-50/50">
+                        <TableRow className="border-b border-slate-100 hover:bg-transparent">
+                          <TableHead className="py-6 pl-8 text-[10px] font-black uppercase tracking-widest">Provider</TableHead>
+                          <TableHead className="text-[10px] font-black uppercase tracking-widest">Plan</TableHead>
+                          <TableHead className="text-[10px] font-black uppercase tracking-widest">Premium</TableHead>
+                          <TableHead className="text-[10px] font-black uppercase tracking-widest">Coverage</TableHead>
+                          <TableHead className="text-[10px] font-black uppercase tracking-widest">Rating</TableHead>
+                          <TableHead className="text-right pr-8 text-[10px] font-black uppercase tracking-widest">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedPolicies.map((p, i) => (
+                          <TableRow key={i} className="border-b border-slate-50 hover:bg-blue-50/20">
+                            <TableCell className="py-6 pl-8 font-black text-slate-900 group-hover:text-blue-600">{p.provider}</TableCell>
+                            <TableCell className="font-bold text-slate-500">{p.plan}</TableCell>
+                            <TableCell className="font-black text-slate-900">{p.premium}</TableCell>
+                            <TableCell className="font-bold text-slate-400">{p.coverage}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 bg-amber-50 rounded-lg px-2 py-1 w-fit border border-amber-100">
+                                <span className="text-xs font-black text-amber-700">{p.rating} ★</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right pr-8">
+                              <Button variant="ghost" className="rounded-xl h-9 px-4 font-bold text-blue-600 hover:bg-white hover:shadow-sm">Select</Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* Documents Tab */}
+            <TabsContent value="documents" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-8">
+                <Card className="glass rounded-[2.5rem] border-slate-200/50 shadow-ambient overflow-hidden">
+                  <CardHeader className="p-8 lg:p-10 border-b border-slate-100">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+                      <div>
+                        <CardTitle className="text-2xl font-bold">Document Repository</CardTitle>
+                        <CardDescription className="text-slate-500 font-medium">Secure institutional storage for policies and records</CardDescription>
+                      </div>
+                      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="bg-blue-600 hover:bg-indigo-700 shadow-lg h-11 rounded-xl px-6 font-bold"><Upload className="h-4 w-4 mr-2" /> Upload</Button>
+                        </DialogTrigger>
+                        <DialogContent className="glass rounded-[2rem] border-slate-200/50 p-8">
+                          <DialogHeader><DialogTitle>Secure Asset Upload</DialogTitle></DialogHeader>
+                          <form onSubmit={handleFileUpload} className="space-y-6 pt-4">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Asset File</Label>
+                              <Input type="file" ref={fileInputRef} onChange={handleFileSelect} className="rounded-xl h-12 pt-2" required />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Classification</Label>
+                              <Select onValueChange={setDocumentType} required>
+                                <SelectTrigger className="rounded-xl h-12"><SelectValue placeholder="Select type" /></SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                  <SelectItem value="Policy">Policy document</SelectItem>
+                                  <SelectItem value="ID">Identity verification</SelectItem>
+                                  <SelectItem value="Claims">Claims record</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button type="submit" disabled={uploadingFile} className="w-full bg-blue-600 h-12 rounded-xl font-bold shadow-lg">{uploadingFile ? "Encrypting..." : "Finalize Upload"}</Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {uploadedFiles.map((file) => (
+                        <Card key={file.id} className="glass rounded-2xl border-slate-100 shadow-sm hover:shadow-ambient transition-all group overflow-hidden border hover:border-indigo-100">
+                          <CardContent className="p-6">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><FileText className="h-6 w-6" /></div>
+                            <div className="space-y-1">
+                              <h4 className="font-bold text-slate-900 truncate tracking-tight">{file.name}</h4>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{file.size} • {file.type}</p>
+                              <p className="text-[10px] font-bold text-slate-400 italic mt-1">{file.date}</p>
+                            </div>
+                            <div className="flex gap-2 mt-6 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-blue-50 text-blue-600" onClick={() => handleFileDownload(file.id)}><Download className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-red-50 text-red-500" onClick={() => handleFileDelete(file.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* Reminders Tab */}
+            <TabsContent value="reminders" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-8">
+                <Card className="glass rounded-[2.5rem] border-slate-200/50 shadow-ambient overflow-hidden">
+                  <CardHeader className="p-8 lg:p-10 border-b border-slate-100">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+                      <div>
+                        <CardTitle className="text-2xl font-bold text-slate-900">Alert Center</CardTitle>
+                        <CardDescription className="text-slate-500 font-medium">Lifecycle management for institutional tasks</CardDescription>
+                      </div>
+                      <Dialog open={isReminderDialogOpen} onOpenChange={setIsReminderDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="bg-blue-600 hover:bg-indigo-700 shadow-lg rounded-2xl h-11 px-6 font-bold"><Plus className="h-4 w-4 mr-2" /> Set Alert</Button>
+                        </DialogTrigger>
+                        <DialogContent className="glass rounded-[2rem] border-slate-200/50 p-8">
+                          <DialogHeader><DialogTitle>New Lifecycle Reminder</DialogTitle></DialogHeader>
+                          <form onSubmit={handleCreateReminder} className="space-y-6 pt-4">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Client Reference</Label>
+                              <Select value={reminderFormData.clientId} onValueChange={(v: string) => setReminderFormData(f => ({...f, clientId: v}))} required>
+                                <SelectTrigger className="rounded-xl h-12"><SelectValue placeholder="Select client" /></SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                  {clients.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Event Date</Label>
+                                <Input type="date" value={reminderFormData.date} onChange={(e) => setReminderFormData(f => ({...f, date: e.target.value}))} className="rounded-xl h-12" required />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Priority</Label>
+                                <Select value={reminderFormData.priority} onValueChange={(v: string) => setReminderFormData(f => ({...f, priority: v}))} required>
+                                  <SelectTrigger className="rounded-xl h-12"><SelectValue placeholder="Priority" /></SelectTrigger>
+                                  <SelectContent className="rounded-xl">
+                                    <SelectItem value="High">Priority (High)</SelectItem>
+                                    <SelectItem value="Medium">Standard (Med)</SelectItem>
+                                    <SelectItem value="Low">Future (Low)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Event Description</Label>
+                              <Input placeholder="Renewal of Health Policy" value={reminderFormData.type} onChange={(e) => setReminderFormData(f => ({...f, type: e.target.value}))} className="rounded-xl h-12" required />
+                            </div>
+                            <Button type="submit" className="w-full bg-blue-600 h-12 rounded-xl font-bold shadow-lg">Activate Reminder</Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                    <div className="space-y-4">
+                      {reminders.length === 0 ? (
+                        <div className="text-center py-12 text-slate-400 font-medium">No active lifecycle alerts found.</div>
+                      ) : (
+                        reminders.map((reminder) => (
+                          <div key={reminder.id} className={`flex items-center justify-between p-6 glass border border-slate-100 rounded-2xl ${reminder.completed ? 'opacity-50 grayscale bg-slate-50/50' : 'bg-white shadow-sm hover:shadow-ambient transition-all'}`}>
+                            <div className="flex items-center gap-6 flex-1">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${reminder.completed ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'}`}>
+                                <Calendar className="h-6 w-6" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3">
+                                  <p className={`font-bold text-slate-900 tracking-tight ${reminder.completed ? 'line-through' : ''}`}>{reminder.type}</p>
+                                  {reminder.completed && <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">COMPLETED</Badge>}
+                                </div>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-tight">{reminder.clientName}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <Badge className={`rounded-lg px-3 py-1 font-black text-[10px] tracking-tight ${
+                                reminder.priority === "High" ? "bg-red-50 text-red-600 border-red-100" :
+                                reminder.priority === "Medium" ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-slate-50 text-slate-500 border-slate-100"
+                              }`}>{reminder.priority?.toUpperCase()}</Badge>
+                              <span className="text-xs font-black text-slate-500 tracking-tight">{new Date(reminder.date).toLocaleDateString()}</span>
+                              <div className="flex gap-2">
+                                {!reminder.completed && (
+                                  <Button variant="ghost" size="icon" className="group" onClick={() => handleMarkReminderComplete(reminder.id)}><CheckCircle className="h-5 w-5 text-slate-300 group-hover:text-emerald-500" /></Button>
+                                )}
+                                <Button variant="ghost" size="icon" className="group" onClick={() => handleDeleteReminder(reminder.id)}><Trash2 className="h-5 w-5 text-slate-300 group-hover:text-red-500" /></Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* Reports Tab */}
+            <TabsContent value="reports" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <Card className="glass rounded-[2rem] border-slate-200/50 shadow-ambient p-8">
+                    <CardHeader className="p-0 mb-8"><CardTitle className="text-xl font-bold">Revenue Matrix</CardTitle></CardHeader>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={salesData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} /><YAxis hide /><RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} /><Bar dataKey="achieved" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={30} /></BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                  <Card className="glass rounded-[2rem] border-slate-200/50 shadow-ambient p-8">
+                    <CardHeader className="p-0 mb-8"><CardTitle className="text-xl font-bold">Growth Velocity</CardTitle></CardHeader>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={salesData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" /><XAxis dataKey="month" hide /><YAxis hide /><RechartsTooltip contentStyle={{borderRadius: '1rem'}} /><Line type="monotone" dataKey="achieved" stroke="#4f46e5" strokeWidth={4} dot={{r: 4, fill: '#4f46e5'}} /></LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </motion.div>
+            </TabsContent>
+
+            {/* Marketing Tab */}
+            <TabsContent value="marketing" className="space-y-8 outline-none">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <Card className="glass rounded-[2.5rem] border-slate-200/50 shadow-ambient overflow-hidden">
+                  <CardHeader className="p-8 lg:p-10 border-b border-slate-100 bg-blue-600 text-white">
+                    <CardTitle className="text-2xl font-bold">Brand Acceleration Engine</CardTitle>
+                    <CardDescription className="text-indigo-100 font-medium tracking-tight">Generate premium marketing collateral for your brand</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-8 grid md:grid-cols-2 gap-10">
+                    <div className="space-y-8">
+                      <div>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-4">Distribution Platforms</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          {[
+                            { name: "Facebook", icon: Facebook },
+                            { name: "Instagram", icon: Instagram },
+                            { name: "LinkedIn", icon: Linkedin },
+                            { name: "X (Twitter)", icon: Twitter },
+                          ].map((p, i) => (
+                            <Button key={i} variant="outline" className="h-20 rounded-2xl flex flex-col gap-2 font-bold hover:border-blue-600 hover:text-blue-600 transition-all bg-white" onClick={() => handleGenerateMarketing(p.name)}>
+                              <p.icon className="h-5 w-5" />
+                              <span className="text-xs">{p.name}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-[2rem] p-8 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+                      <Sparkles className="h-10 w-10 text-indigo-200 mb-4" />
+                      <h4 className="text-lg font-bold text-slate-900 mb-2">Creative Direction</h4>
+                      <p className="text-sm text-slate-500 max-w-xs mb-6">Select a campaign theme to generate AI-driven marketing copies and designs.</p>
+                      <Button className="rounded-xl font-bold bg-blue-600 shadow-lg">Activate AURA™ AI</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </main>
       </div>
     </div>
   );

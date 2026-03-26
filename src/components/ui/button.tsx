@@ -5,20 +5,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none hover:scale-[1.02] active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none hover:scale-105 active:scale-95",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm hover:shadow-ambient border-0",
+        default: "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm hover:shadow-ambient border-0",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 shadow-sm",
         outline:
           "border border-slate-200 bg-white/50 backdrop-blur-sm text-foreground hover:bg-slate-50 hover:border-slate-300 shadow-sm",
         secondary:
-          "bg-indigo-50 text-indigo-700 hover:bg-indigo-100/80 border-0",
+          "bg-blue-50 text-blue-700 hover:bg-blue-100/80 border-0",
         ghost:
           "hover:bg-slate-100 hover:text-slate-900",
-        link: "text-indigo-600 underline-offset-4 hover:underline",
+        link: "text-blue-600 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-5 py-2 has-[>svg]:px-4",
